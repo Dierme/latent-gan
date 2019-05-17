@@ -9,7 +9,7 @@
 - `from ddc_pub import ddc_v3 as ddc`
 
 The complete model is a combination of 3 submodels:
-![alt text](https://bitbucket.astrazeneca.net/users/kjmv588/repos/ddc_pub/browse/img/model.png)
+![alt text](img/model.png)
 
 Detailed breakdown of the full model:
-![alt text](https://bitbucket.astrazeneca.net/users/kjmv588/repos/ddc_pub/browse/img/detailed_model.png)
+![alt text](img/detailed_model.png)
