@@ -2,27 +2,33 @@ from keras.callbacks import ModelCheckpoint
 import tempfile, pickle, shutil
 import numpy as np
 
-def exp_lr_decay(epoch, lr): 
+class LearningRateSchedule:
     '''
-    Custom learning rate decay schedule.
+    Class for custom learning rate schedules.
     '''
-    epoch_to_start = 500
-    last_epoch = 999
-    lr_init = 1e-3
-    lr_final = 1e-6
-
-    decay_duration = last_epoch - epoch_to_start
-    
-    if epoch < epoch_to_start:
-        return lr
-    else:
-        # Slope of the decay
-        k = - (1/decay_duration) * np.log(lr_final / lr_init)
+    def __init__(self, epoch_to_start=500, last_epoch=999, lr_init=1e-3, lr_final=1e-6):
+        self.epoch_to_start = epoch_to_start
+        self.last_epoch     = last_epoch
+        self.lr_init        = lr_init
+        self.lr_final       = lr_final
         
-        lr = lr_init * np.exp(-k*(epoch-epoch_to_start))
-        return lr
+    def exp_decay(self, epoch, lr):
+        '''
+        Exponential decay.
+        '''
+
+        decay_duration = self.last_epoch - self.epoch_to_start
+        if epoch < self.epoch_to_start:
+            return lr
+        else:
+            # Slope of the decay
+            k = - (1 / decay_duration) * np.log(self.lr_final / self.lr_init)
+
+            lr = self.lr_init * np.exp(- k * (epoch - self.epoch_to_start) )
+            return lr
+
     
-class ModelAndHistoryCheckpoint2(ModelCheckpoint):
+class ModelAndHistoryCheckpoint(ModelCheckpoint):
     """
     Callback to save all sub-models and training history.
     """
@@ -35,7 +41,8 @@ class ModelAndHistoryCheckpoint2(ModelCheckpoint):
                  save_best_only=False, 
                  save_weights_only=False,
                  mode='auto', 
-                 period=1):
+                 period=1,
+                 history={}):
         
         super().__init__(filepath,
                          monitor='val_loss', 
@@ -48,6 +55,8 @@ class ModelAndHistoryCheckpoint2(ModelCheckpoint):
         self.period = period
         self.model_dict = model_dict
         
+        self.history = history
+        
     def save_models(self, filepath):
         '''
         Save everything in a zip file.
@@ -56,11 +65,16 @@ class ModelAndHistoryCheckpoint2(ModelCheckpoint):
         with tempfile.TemporaryDirectory() as dirpath:
 
             # Save the Keras models
-            if self.model_dict["_DDC__mol_to_latent_model"] is not None:
-                self.model_dict["_DDC__mol_to_latent_model"].save(dirpath+"/mol_to_latent_model.h5")
+            try: # Original DDC
+                if self.model_dict["_DDC__mol_to_latent_model"] is not None:
+                    self.model_dict["_DDC__mol_to_latent_model"].save(dirpath+"/mol_to_latent_model.h5")
 
-            self.model_dict["_DDC__latent_to_states_model"].save(dirpath+"/latent_to_states_model.h5")
-            self.model_dict["_DDC__batch_model"].save(dirpath+"/batch_model.h5")
+                self.model_dict["_DDC__latent_to_states_model"].save(dirpath+"/latent_to_states_model.h5")
+                self.model_dict["_DDC__batch_model"].save(dirpath+"/batch_model.h5")
+
+            except: # Unbiased DDC
+                self.model_dict["_DDC__model"].save(dirpath+"/model.h5")
+                print(dirpath)
 
             # Exclude un-picklable and un-wanted attributes
             excl_attr = [ "_DDC__mode", # mode is excluded because it is defined inside __init__
@@ -70,6 +84,7 @@ class ModelAndHistoryCheckpoint2(ModelCheckpoint):
                           "_DDC__latent_to_states_model",
                           "_DDC__batch_model",
                           "_DDC__sample_model",
+                          "_DDC_multi_sample_model",
                           "_DDC__model" ]
 
             # Cannot deepcopy self.__dict__ because of Keras' thread lock so this is
@@ -91,11 +106,12 @@ class ModelAndHistoryCheckpoint2(ModelCheckpoint):
                 #    continue
                 self.model_dict[attr] = to_add[attr]
 
-            print("Model saved.")
+            print("Model saved in %s." % filepath)
             
+    
     def on_train_begin(self, logs=None):
         self.epoch = []
-        self.history = {}
+        
 
     def on_epoch_end(self, epoch, logs=None):
         # Save training history
@@ -139,7 +155,29 @@ class ModelAndHistoryCheckpoint2(ModelCheckpoint):
                 else:
                     self.save_models(filepath)
 
-class ModelAndHistoryCheckpoint(ModelCheckpoint):
+                    
+'''
+def exp_lr_decay(epoch, lr): 
+    """
+    Custom learning rate decay schedule.
+    """
+    EPOCH_TO_START = 500
+    LAST_EPOCH = 999
+    LR_INIT = 1e-3
+    LR_FINAL = 1e-6
+
+    decay_duration = LAST_EPOCH - EPOCH_TO_START
+    if epoch < EPOCH_TO_START:
+        return lr
+    else:
+        # Slope of the decay
+        k = - (1 / decay_duration) * np.log(LR_FINAL / LR_INIT)
+        
+        lr = LR_INIT * np.exp(- k * (epoch - EPOCH_TO_START) )
+        return lr
+                    
+
+class ModelAndHistoryCheckpoint_old(ModelCheckpoint):
     """
     Callback to save all sub-models and training history.
     """
@@ -239,3 +277,4 @@ class ModelAndHistoryCheckpoint(ModelCheckpoint):
                     self.model.save_weights(filepath, overwrite=True)
                 else:
                     self.save_models(filepath)
+'''

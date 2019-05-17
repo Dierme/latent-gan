@@ -165,6 +165,7 @@ class HetSmilesGenerator(SmilesGenerator):
 
         return [batch_1D, batch_1D_i], batch_1D_o
     
+    
 class SmilesGenerator2(SmilesGenerator):
     """Generator class, for use to train the unbiased SMILES RNN.
     
