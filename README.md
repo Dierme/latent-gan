@@ -1,9 +1,8 @@
 # Public repo for DeepDrugCoder (DDC).
 
 ## Installation
-- Create a Python3.6 environment and install `rdkit` by running `conda create -c rdkit -n ddc_env rdkit`.
-- Install CUDA dependencies by `conda install cudatoolkit=9.0 && conda install cudnn`.
-- Run `python setup.py install` to install alongside with pip dependencies.
+- Create a predefined Python3.6 conda environment by `conda create env file==ddc_env.yml`
+- Run `python setup.py install` to add the package to the Python path.
 - Add the environment in the drop-down list of jupyter by `python -m ipykernel install --user --name ddc_env --display-name "ddc_env (python_3.6.7)"`.
 
 ## Usage (within your ddc environment)
