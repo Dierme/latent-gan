@@ -6,4 +6,4 @@
 - Run `python setup.py install` to install alongside with pip dependencies.
 
 ## Usage (within your ddc environment)
-`from ddc_pub import ddc_v3 as ddc`
+- `from ddc_pub import ddc_v3 as ddc`
