@@ -1,4 +1,4 @@
-# Public repo for ddc usage.
+# Public repo for DeepDrugCoder (DDC).
 
 ## Installation
 Create a `python 3.6` environment and install `rdkit` by running `conda create -c rdkit -n ddc rdkit`.
