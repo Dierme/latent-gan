@@ -1,3 +1,5 @@
+# Authot: Esben Bjerrum, https://github.com/EBjerrum/molvecgen
+
 import numpy as np
 import threading
 

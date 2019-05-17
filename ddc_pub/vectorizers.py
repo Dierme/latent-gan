@@ -1,4 +1,6 @@
 #Experimental Class for Smiles Enumeration, Iterator and SmilesIterator adapted from Keras 1.2.2
+# Author: Esben Bjerrum, https://github.com/EBjerrum/molvecgen
+
 from rdkit import Chem
 import numpy as np
 
