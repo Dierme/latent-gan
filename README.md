@@ -1,5 +1,8 @@
 # Public repo for DeepDrugCoder (DDC).
 
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
+
 ### Installation
 - Create a predefined Python3.6 conda environment by `conda create env file==ddc_env.yml`
 - Run `python setup.py install` to install pip dependencies and add the package to the Python path.
