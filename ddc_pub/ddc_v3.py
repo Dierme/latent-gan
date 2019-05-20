@@ -21,8 +21,10 @@ from keras.layers import (
     Flatten,
     RepeatVector,
     TimeDistributed,
+    Bidirectional,
+    GaussianNoise,
+    BatchNormalization
 )
-from keras.layers import Bidirectional, GaussianNoise, BatchNormalization
 from keras.layers import (
     CuDNNLSTM as LSTM,
 )  # Faster drop-in for LSTM using CuDNN on TF backend on GPU
@@ -42,9 +44,7 @@ from .custom_callbacks import ModelAndHistoryCheckpoint, LearningRateSchedule
 
 
 def timed(func):
-    """
-    Timer decorator to benchmark functions.
-    """
+    """Timer decorator to benchmark functions."""
 
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -59,22 +59,22 @@ def timed(func):
 
 class DDC:
     def __init__(self, **kwargs):
-        """
+        """Initialize a DDC object from scratch or from a trained model.
+        
         # Arguments
-            kwargs:
-                x            : model input                                                  - np.ndarray of np.bytes_ or np.float64
-                y            : model output                                                 - np.ndarray of np.bytes_
-                scaling      : flag for scaling of the input descriptors                    - boolean
-                pca          : flag for applying PCA on the input descriptors after scaling - boolean
-                model_name   : model filename to load                                       - string
-                dataset_info : dataset information including name, maxlen and charset       - hdf5
-                noise_std    : standard deviation of the noise layer in the latent space    - float
-                lstm_dim     : size of LSTM RNN layers                                      - int
-                dec_layers   : number of decoder layers                                     - int
-                td_dense_dim : size of TD Dense layers inbetween the LSTM ones
-                               to suppress network size                                     - int
-                batch_size   : the network's batch size                                     - int
-                codelayer_dim: dimensionality of the latent space or number of descriptors  - int
+            x            : model input                                                  - np.ndarray of np.bytes_ or np.float64
+            y            : model output                                                 - np.ndarray of np.bytes_
+            scaling      : flag for scaling of the input descriptors                    - boolean
+            pca          : flag for applying PCA on the input descriptors after scaling - boolean
+            model_name   : model filename to load                                       - string
+            dataset_info : dataset information including name, maxlen and charset       - hdf5
+            noise_std    : standard deviation of the noise layer in the latent space    - float
+            lstm_dim     : size of LSTM RNN layers                                      - int
+            dec_layers   : number of decoder layers                                     - int
+            td_dense_dim : size of TD Dense layers inbetween the LSTM ones
+                           to suppress network size                                     - int
+            batch_size   : the network's batch size                                     - int
+            codelayer_dim: dimensionality of the latent space or number of descriptors  - int
                 
                 
         # Examples of __init__ usage
@@ -433,9 +433,7 @@ class DDC:
     """
 
     def __build_generators(self, x, y, split=0.9):
-        """
-        Build data generators to be used in (re)training.
-        """
+        """Build data generators to be used in (re)training."""
 
         # Sanity check
         assert len(x) == len(y)
@@ -497,8 +495,7 @@ class DDC:
         )
 
     def __build_mol_to_latent_model(self):
-        """
-        Model that transforms binary molecules to their latent representation.
+        """Model that transforms binary molecules to their latent representation.
         Only used if input is mols.
         Other input types may be either ECFP4 or QSAR properties; in this case this model is not used.
         """
@@ -573,8 +570,8 @@ class DDC:
         self.mol_to_latent_model.name = "mol_to_latent_model"
 
     def __build_latent_to_states_model(self):
-        """
-        Model that constructs the initial states of the decoder from a latent molecular representation.
+        """Model that constructs the initial states of the decoder from 
+        a latent molecular representation.
         """
 
         # Input tensor (MANDATORY)
@@ -613,9 +610,7 @@ class DDC:
         self.latent_to_states_model.name = "latent_to_states_model"
 
     def __build_batch_model(self):
-        """
-        Model that returns a vectorized SMILES string of OHE characters.
-        """
+        """Model that returns a vectorized SMILES string of OHE characters."""
 
         # List of input tensors to batch_model
         inputs = []
@@ -666,9 +661,7 @@ class DDC:
         self.batch_model.name = "batch_model"
 
     def __build_model(self):
-        """
-        Full model that constitutes the complete pipeline.
-        """
+        """Full model that constitutes the complete pipeline."""
 
         # IFF input is not encoded, stack the encoder (mol_to_latent_model)
         if self.input_type == "mols":
@@ -709,10 +702,8 @@ class DDC:
             self.__model = Model(inputs=[latent_input, decoder_inputs], outputs=[x])
 
     def __build_sample_model(self, batch_input_length) -> dict:
-        """
-        Model that predicts a single OHE character.
+        """Model that predicts a single OHE character.
         This model is generated from the modified config file of the self.batch_model.
-
         Returns:
             The dictionary of the configuration.
         """
@@ -786,8 +777,7 @@ class DDC:
         return config
 
     def __load(self, model_name):
-        """
-        Load complete model from a zip file.
+        """Load complete model from a zip file.
         To be called within __init__.
         """
 
@@ -854,27 +844,25 @@ class DDC:
         sch_lr_init=1e-3,
         sch_lr_final=1e-6,
     ):
-        """
-        Fit the full model to the training data.
+        """Fit the full model to the training data.
         Supports multi-gpu training if gpus set to >1.
         
         # Arguments
-            kwargs:
-                model_name         : base name for the checkpoints                                       - string
-                epochs             : number of epochs to train in total                                  - int
-                lr                 : initial learning rate of the training                               - float
-                mini_epochs        : number of dividends of an epoch (==1 means no mini_epochs)          - int
-                patience           : minimum consecutive mini_epochs of stagnated learning rate to consider 
-                                     before lowering it                                                  - int
-                gpus               : number of gpus to use for multi-gpu training (==1 means single gpu) - int
-                workers            : number of CPU workers                                               - int
-                use_multiprocessing: flag for Keras multiprocessing                                      - boolean
-                verbose            : verbosity of the training                                           - int
-                max_queue_size     : max size of the generator queue                                     - int
-                clipvalue          : value of gradient clipping                                          - float
-                save_period        : mini_epochs every which to checkpoint the model                     - int
-                checkpoint_dir     : directory to store the checkpoints                                  - string
-                lr_decay           : flag to use exponential decay of learning rate                      - boolean
+            model_name         : base name for the checkpoints                                       - string
+            epochs             : number of epochs to train in total                                  - int
+            lr                 : initial learning rate of the training                               - float
+            mini_epochs        : number of dividends of an epoch (==1 means no mini_epochs)          - int
+            patience           : minimum consecutive mini_epochs of stagnated learning rate to consider 
+                                 before lowering it                                                  - int
+            gpus               : number of gpus to use for multi-gpu training (==1 means single gpu) - int
+            workers            : number of CPU workers                                               - int
+            use_multiprocessing: flag for Keras multiprocessing                                      - boolean
+            verbose            : verbosity of the training                                           - int
+            max_queue_size     : max size of the generator queue                                     - int
+            clipvalue          : value of gradient clipping                                          - float
+            save_period        : mini_epochs every which to checkpoint the model                     - int
+            checkpoint_dir     : directory to store the checkpoints                                  - string
+            lr_decay           : flag to use exponential decay of learning rate                      - boolean
         """
 
         # Get parameter values if specified
@@ -985,9 +973,7 @@ class DDC:
         )  # Multi-output model
 
     def vectorize(self, mols_test, leftpad=True):
-        """
-        Perform One-Hot Encoding (OHE) on a binary molecule.
-        """
+        """Perform One-Hot Encoding (OHE) on a binary molecule."""
 
         if leftpad:
             return self.smilesvec1.transform(mols_test)
@@ -995,8 +981,7 @@ class DDC:
             return self.smilesvec2.transform(mols_test)
 
     def transform(self, mols_ohe):
-        """
-        Encode a batch of OHE molecules into their latent representations.
+        """Encode a batch of OHE molecules into their latent representations.
         Must be called on the output of self.vectorize().
         """
 
@@ -1005,20 +990,14 @@ class DDC:
 
     # @timed
     def predict(self, latent, temp=1):
-        """
-        Generate a single SMILES string.
-        
+        """Generate a single SMILES string.
         The states of the RNN are set based on the latent input.
-        
         Careful, "latent" must be: the output of self.transform()
                                    or
                                    an array of molecular descriptors.
-        
         If temp>0, multinomial sampling is used instead of selecting 
         the single most probable character at each step.
-        
         If temp==1, multinomial sampling without temperature scaling is used.
-        
         Returns:
             A single SMILES string and its NLL.
         """
@@ -1080,25 +1059,19 @@ class DDC:
 
     # @timed
     def predict_batch(self, latent, temp=1):
-        """
-        Generate multiple biased SMILES strings.
-        
+        """Generate multiple biased SMILES strings.
         Careful, "latent" must be: the output of self.transform()
                                    or
                                    an array of molecular descriptors.
-        
         If temp>0, multinomial sampling is used instead of selecting 
         the single most probable character at each step.
-        
         If temp==1, multinomial sampling without temperature scaling is used.
-        
         Low temp leads to elimination of characters with low probabilities.
-        
         By default, self.sample_model predicts a single character for a single SMILES string.
         To predict single characters for multiple SMILES strings, call build_sample_model()
         with batch_input_length > 1. 
         
-        predict_many() generates batch_input_length (default==batch_size) individual SMILES 
+        predict_batch() generates batch_input_length (default==batch_size) individual SMILES 
         strings per call. To change that, reset batch_input_length to a new value.
         """
 
@@ -1181,10 +1154,8 @@ class DDC:
 
     @timed
     def get_smiles_nll(self, latent, smiles_ref) -> float:
-        """
-        Calculate the NLL of a given SMILES string if its descriptors are used as RNN states.
+        """Calculate the NLL of a given SMILES string if its descriptors are used as RNN states.
         "latent" refers to the descriptors of the "smiles_ref".
-        
         Returns:
             The NLL of a given SMILES string.
         """
@@ -1231,10 +1202,8 @@ class DDC:
 
     @timed
     def get_smiles_nll_batch(self, latent, smiles_ref) -> list:
-        """
-        Calculate the individual NLL for a batch of known SMILES strings.
+        """Calculate the individual NLL for a batch of known SMILES strings.
         Batch size is equal to self.batch_input_length so reset it if needed.
-        
         Returns:
             NLL of all SMILES as a list.
         """
@@ -1305,9 +1274,7 @@ class DDC:
                 return NLL
 
     def summary(self):
-        """
-        Echo the training configuration for inspection.
-        """
+        """Echo the training configuration for inspection."""
 
         print(
             "\nModel trained with dataset %s that has maxlen=%d and charset=%s for %d epochs."
@@ -1328,8 +1295,7 @@ class DDC:
         )
 
     def get_graphs(self):
-        """
-        Export the graphs of the model and its submodels to png files.
+        """Export the graphs of the model and its submodels to png files.
         Requires "pydot" and "graphviz" to be installed (pip install graphviz && pip install pydot).
         """
 
@@ -1354,9 +1320,7 @@ class DDC:
 
     @timed
     def save(self, model_name):
-        """
-        Save model in a zip file.
-        """
+        """Save model in a zip file."""
 
         with tempfile.TemporaryDirectory() as dirpath:
 

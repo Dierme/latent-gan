@@ -36,9 +36,9 @@ from sklearn.decomposition import PCA  # For the descriptors
 
 # Custom dependencies
 from molvecgen import SmilesVectorizer
-from generators import CodeGenerator as DescriptorGenerator
-from generators import HetSmilesGenerator
-from custom_callbacks import ModelAndHistoryCheckpoint, LearningRateSchedule
+from .generators import CodeGenerator as DescriptorGenerator
+from .generators import HetSmilesGenerator
+from .custom_callbacks import ModelAndHistoryCheckpoint, LearningRateSchedule
 
 
 def timed(func):
@@ -434,8 +434,8 @@ class DDC:
 
     def __build_generators(self, x, y, split=0.9):
         """
-            Build data generators to be used in (re)training.
-            """
+        Build data generators to be used in (re)training.
+        """
 
         # Sanity check
         assert len(x) == len(y)
@@ -1052,7 +1052,7 @@ class DDC:
         for i in range(1000):
             o = self.sample_model.predict(samplevec)
             # Multinomial sampling with temperature scaling
-            if temp:
+            if temp > 0:
                 temp = abs(temp)  # Handle negative values
                 nextCharProbs = np.log(o) / temp
                 nextCharProbs = np.exp(nextCharProbs)
@@ -1138,7 +1138,7 @@ class DDC:
             ).squeeze()
 
             # Multinomial sampling with temperature scaling
-            if temp:
+            if temp > 0:
                 temp = abs(temp)  # No negative values
                 nextCharProbs = np.log(o) / temp
                 nextCharProbs = np.exp(nextCharProbs)  # .squeeze()
@@ -1369,17 +1369,17 @@ class DDC:
 
             # Exclude unpicklable and unwanted attributes
             excl_attr = [
-                "_DDC__mode",  # excluded because it is always identified within self.__init__()
-                "_DDC__train_gen",  # unpicklable
-                "_DDC__valid_gen",  # unpicklable
-                "_DDC__mol_to_latent_model",  # unpicklable
-                "_DDC__latent_to_states_model",  # unpicklable
-                "_DDC__batch_model",  # unpicklable
-                "_DDC__sample_model",  # unpicklable
-                "_DDC__multi_sample_model",  # unpicklable
+                "_DDC__mode",  
+                "_DDC__train_gen",  
+                "_DDC__valid_gen",  
+                "_DDC__mol_to_latent_model",  
+                "_DDC__latent_to_states_model",  
+                "_DDC__batch_model",  
+                "_DDC__sample_model",  
+                "_DDC__multi_sample_model",  
                 "_DDC__model",
-            ]  # unpicklable
-
+            ] 
+            
             # Cannot deepcopy self.__dict__ because of Keras' thread lock so this is
             # bypassed by popping and re-inserting the unpicklable attributes
             to_add = {}
