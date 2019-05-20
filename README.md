@@ -13,7 +13,16 @@
 - `from ddc_pub import ddc_v3 as ddc`
 
 ### API
-- TBD
+- `fit()`: Fit a DDC model to the dataset.
+- `vectorize()`: Convert a binary RDKit molecule to its One-Hot-Encoded representation.
+- `transform()`: Encode a vectorized molecule to its latent representation.
+- `predict()`: Decode a latent representation into a SMILES string and calculate its NLL.
+- `predict_batch()`: Decode a list of latent representations into SMILES strings and calculate their NLLs.
+- `get_smiles_nll()`: Calculate the NLL of a known SMILES string to be sampled by the biased decoder.
+- `get_smiles_nll_batch()`: Calculate the NLLs of a batch of known SMILES strings to be sampled by the biased decoder.
+- `summary()`: Display essential architectural parameters.
+- `get_graphs()`: Export model graphs to .png files using `pydot` and `graphviz`.
+- `save()`: Save the model in a .zip directory.
 
 Detailed breakdown of the full model:
 ![alt text](img/detailed_model.png)
