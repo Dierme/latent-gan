@@ -36,9 +36,9 @@ from sklearn.decomposition import PCA  # For the descriptors
 
 # Custom dependencies
 from molvecgen import SmilesVectorizer
-from generators import CodeGenerator as DescriptorGenerator
-from generators import HetSmilesGenerator
-from custom_callbacks import ModelAndHistoryCheckpoint, LearningRateSchedule
+from .generators import CodeGenerator as DescriptorGenerator
+from .generators import HetSmilesGenerator
+from .custom_callbacks import ModelAndHistoryCheckpoint, LearningRateSchedule
 
 
 def timed(func):
