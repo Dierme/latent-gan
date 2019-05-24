@@ -23,6 +23,3 @@
 - `summary()`: Display essential architectural parameters.
 - `get_graphs()`: Export model graphs to .png files using `pydot` and `graphviz`.
 - `save()`: Save the model in a .zip directory.
-
-Detailed breakdown of the full model:
-<>![alt text](img/detailed_model.png)
