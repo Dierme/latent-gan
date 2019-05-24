@@ -1075,8 +1075,12 @@ class DDC:
         strings per call. To change that, reset batch_input_length to a new value.
         """
 
-        # Must repeat latent
-        latent = np.ones((self.batch_input_length, self.codelayer_dim)) * latent
+        if latent.shape[0] == 1:
+            # Make a batch prediction by repeating the same latent vector for every neuron
+            latent = np.ones((self.batch_input_length, self.codelayer_dim)) * latent
+        else:
+            # Make sure it is squeezed
+            latent = latent.squeeze()
 
         # Scale inputs if model is trained on scaled data
         if self.scaler is not None:
