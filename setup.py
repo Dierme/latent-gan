@@ -7,7 +7,7 @@ setup(
     url="https://bitbucket.astrazeneca.net/users/kjmv588/repos/ddc_pub",
     author="Panagiotis-Christos Kotsias",
     author_email="panagiotis-christos.kotsias@astrazeneca.net",
-    license="MIT",
+    license="GPLv3",
     packages=["ddc_pub"],
     install_requires=[  # "rdkit",
         "numpy",
