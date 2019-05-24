@@ -25,4 +25,4 @@
 - `save()`: Save the model in a .zip directory.
 
 Detailed breakdown of the full model:
-![alt text](img/detailed_model.png)
+<>![alt text](img/detailed_model.png)
