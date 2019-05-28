@@ -59,24 +59,8 @@ def timed(func):
 
 class DDC:
     def __init__(self, **kwargs):
-        """Initialize a DDC object from scratch or from a trained model.
+        """Initialize a DDC object from scratch or from a trained configuration. All binary mols are converted to SMILES strings internally, using the vectorizers.
         
-        # Arguments
-            x            : model input                                                  - np.ndarray of np.bytes_ or np.float64
-            y            : model output                                                 - np.ndarray of np.bytes_
-            scaling      : flag for scaling of the input descriptors                    - boolean
-            pca          : flag for applying PCA on the input descriptors after scaling - boolean
-            model_name   : model filename to load                                       - string
-            dataset_info : dataset information including name, maxlen and charset       - hdf5
-            noise_std    : standard deviation of the noise layer in the latent space    - float
-            lstm_dim     : size of LSTM RNN layers                                      - int
-            dec_layers   : number of decoder layers                                     - int
-            td_dense_dim : size of TD Dense layers inbetween the LSTM ones
-                           to suppress network size                                     - int
-            batch_size   : the network's batch size                                     - int
-            codelayer_dim: dimensionality of the latent space or number of descriptors  - int
-                
-                
         # Examples of __init__ usage
             To *train* a blank model with encoder (autoencoder):
                 model = ddc.DDC(x              = mols,
@@ -116,6 +100,33 @@ class DDC:
             To *test* a saved model:
                 model = ddc.DDC(model_name     = saved_model_name)
 
+        :param x: Encoder input
+        :type x: list or numpy.ndarray
+        :param y: Decoder input for teacher's forcing
+        :type y: list or numpy.ndarray
+        :param scaling: Flag to scale descriptor inputs, defaults to `False`
+        :type scaling: boolean
+        :param pca: Flag to apply PCA on descriptor inputs, defaults to `False`
+        :type pca: boolean
+        :param model_name: Filename of model to load
+        :type model_name: str
+        :param dataset_info: Metadata about dataset
+        :type dataset_info: dict
+        :param noise_std: Standard deviation of noise in the latent space, defaults to 0.01
+        :type noise_std: float
+        :param lstm_dim: Number of LSTM units in the encoder/decoder layers, defaults to 256
+        :param dec_layers: Number of decoder layers, defaults to 2
+        :type dec_layers: int
+        :param td_dense_dim: Number of intermediate Dense units to squeeze LSTM outputs, defaults to 0
+        :type td_dense_dim: int
+        :param batch_size: Batch size to train with, defaults to 256
+        :type batch_size: int
+        :param codelayer_dim: Dimensionality of latent space
+        :type codelayer_dim: int
+        :param bn: Fla to enable batch normalization, defaults to `True`
+        :type bn: boolean
+        :param bn_momentum: Momentum value to be used in batch normalization, defaults to 0.9
+        :type bn_momentum: float
         """
 
         # Identify the mode to start the model in
@@ -433,8 +444,16 @@ class DDC:
     """
 
     def __build_generators(self, x, y, split=0.9):
-        """Build data generators to be used in (re)training."""
-
+        """Build data generators to be used for (re)training.
+        
+        :param x: Encoder input
+        :type x: list
+        :param y: Decoder input for teacher's forcing
+        :type y: list
+        :param split: Fraction of samples to keep for training (rest for validation), defaults to 0.9
+        :type split: float, optional
+        """
+        
         # Sanity check
         assert len(x) == len(y)
 
@@ -497,7 +516,6 @@ class DDC:
     def __build_mol_to_latent_model(self):
         """Model that transforms binary molecules to their latent representation.
         Only used if input is mols.
-        Other input types may be either ECFP4 or QSAR properties; in this case this model is not used.
         """
 
         # Input tensor (MANDATORY)
@@ -570,8 +588,7 @@ class DDC:
         self.mol_to_latent_model.name = "mol_to_latent_model"
 
     def __build_latent_to_states_model(self):
-        """Model that constructs the initial states of the decoder from 
-        a latent molecular representation.
+        """Model that constructs the initial states of the decoder from a latent molecular representation.
         """
 
         # Input tensor (MANDATORY)
@@ -610,7 +627,8 @@ class DDC:
         self.latent_to_states_model.name = "latent_to_states_model"
 
     def __build_batch_model(self):
-        """Model that returns a vectorized SMILES string of OHE characters."""
+        """Model that returns a vectorized SMILES string of OHE characters.
+        """
 
         # List of input tensors to batch_model
         inputs = []
@@ -661,7 +679,8 @@ class DDC:
         self.batch_model.name = "batch_model"
 
     def __build_model(self):
-        """Full model that constitutes the complete pipeline."""
+        """Full model that constitutes the complete pipeline.
+        """
 
         # IFF input is not encoded, stack the encoder (mol_to_latent_model)
         if self.input_type == "mols":
@@ -703,9 +722,12 @@ class DDC:
 
     def __build_sample_model(self, batch_input_length) -> dict:
         """Model that predicts a single OHE character.
-        This model is generated from the modified config file of the self.batch_model.
-        Returns:
-            The dictionary of the configuration.
+        This model is generated from the modified config file of the batch_model.
+        
+        :param batch_input_length: Size of generated batch
+        :type batch_input_length: int
+        :return: The dictionary of the configuration
+        :rtype: dict
         """
 
         self.__batch_input_length = batch_input_length
@@ -777,8 +799,10 @@ class DDC:
         return config
 
     def __load(self, model_name):
-        """Load complete model from a zip file.
-        To be called within __init__.
+        """Load a DDC object from a zip file.
+        
+        :param model_name: Path to model
+        :type model_name: string
         """
 
         print("Loading model.")
@@ -825,11 +849,11 @@ class DDC:
 
     def fit(
         self,
-        model_name,
         epochs,
         lr,
         mini_epochs,
         patience,
+        model_name,
         gpus=1,
         workers=1,
         use_multiprocessing=False,
@@ -844,25 +868,45 @@ class DDC:
         sch_lr_init=1e-3,
         sch_lr_final=1e-6,
     ):
-        """Fit the full model to the training data.
+      	"""Fit the full model to the training data.
         Supports multi-gpu training if gpus set to >1.
         
-        # Arguments
-            model_name         : base name for the checkpoints                                       - string
-            epochs             : number of epochs to train in total                                  - int
-            lr                 : initial learning rate of the training                               - float
-            mini_epochs        : number of dividends of an epoch (==1 means no mini_epochs)          - int
-            patience           : minimum consecutive mini_epochs of stagnated learning rate to consider 
-                                 before lowering it                                                  - int
-            gpus               : number of gpus to use for multi-gpu training (==1 means single gpu) - int
-            workers            : number of CPU workers                                               - int
-            use_multiprocessing: flag for Keras multiprocessing                                      - boolean
-            verbose            : verbosity of the training                                           - int
-            max_queue_size     : max size of the generator queue                                     - int
-            clipvalue          : value of gradient clipping                                          - float
-            save_period        : mini_epochs every which to checkpoint the model                     - int
-            checkpoint_dir     : directory to store the checkpoints                                  - string
-            lr_decay           : flag to use exponential decay of learning rate                      - boolean
+        :param epochs: Training iterations over complete training set.
+        :type epochs: int
+        :param lr: Initial learning rate
+        :type lr: float
+        :param mini_epochs: Subdivisions of a single epoch to trick Keras into applying callbacks
+        :type mini_epochs: int
+        :param patience: minimum consecutive mini_epochs of stagnated learning rate to consider before lowering it with ReduceLROnPlateau 
+        :type patience: int
+        :param model_name: Base name of model checkpoints
+        :type model_name: str
+        :param gpus: Number of GPUs to be used for training, defaults to 1
+        :type gpus: int, optional
+        :param workers: Keras CPU workers, defaults to 1
+        :type workers: int, optional
+        :param use_multiprocessing: Multi-CPU processing, defaults to False
+        :type use_multiprocessing: bool, optional
+        :param verbose: Keras training verbosity, defaults to 2
+        :type verbose: int, optional
+        :param max_queue_size: Keras generator max number of fetched samples, defaults to 10
+        :type max_queue_size: int, optional
+        :param clipvalue: Gradient clipping value, defaults to 0
+        :type clipvalue: int, optional
+        :param save_period: Checkpoint period in miniepochs, defaults to 5
+        :type save_period: int, optional
+        :param checkpoint_dir: Directory to store checkpoints in, defaults to "/projects/cc/kjmv588/models/checkpoints/"
+        :type checkpoint_dir: str, optional
+        :param lr_decay: Flag to enable exponential learning rate decay, defaults to False
+        :type lr_decay: bool, optional
+        :param sch_epoch_to_start: Miniepoch to start exponential learning rate decay, defaults to 500
+        :type sch_epoch_to_start: int, optional
+        :param sch_last_epoch: Last miniepoch of exponential learning rate decay, defaults to 999
+        :type sch_last_epoch: int, optional
+        :param sch_lr_init: Initial learning rate to start exponential learning rate decay, defaults to 1e-3
+        :type sch_lr_init: float, optional
+        :param sch_lr_final: Target learning rate value to stop decaying, defaults to 1e-6
+        :type sch_lr_final: float, optional
         """
 
         # Get parameter values if specified
@@ -973,7 +1017,15 @@ class DDC:
         )  # Multi-output model
 
     def vectorize(self, mols_test, leftpad=True):
-        """Perform One-Hot Encoding (OHE) on a binary molecule."""
+        """Perform One-Hot Encoding (OHE) on a binary molecule.
+        
+        :param mols_test: Molecules to vectorize
+        :type mols_test: list
+        :param leftpad: Left zero-padding direction, defaults to True
+        :type leftpad: bool, optional
+        :return: One-Hot Encoded molecules
+        :rtype: list
+        """
 
         if leftpad:
             return self.smilesvec1.transform(mols_test)
@@ -983,6 +1035,11 @@ class DDC:
     def transform(self, mols_ohe):
         """Encode a batch of OHE molecules into their latent representations.
         Must be called on the output of self.vectorize().
+        
+        :param mols_ohe: List of One-Hot Encoded molecules
+        :type mols_ohe: list
+        :return: Latent representation of input molecules
+        :rtype: list
         """
 
         latent = self.mol_to_latent_model.predict(mols_ohe)
@@ -998,8 +1055,13 @@ class DDC:
         If temp>0, multinomial sampling is used instead of selecting 
         the single most probable character at each step.
         If temp==1, multinomial sampling without temperature scaling is used.
-        Returns:
-            A single SMILES string and its NLL.
+        
+        :param latent: 1D Latent vector to steer the generation
+        :type latent: numpy.ndarray
+        :param temp: Temperatute of multinomial sampling (argmax if 0), defaults to 1
+        :type temp: int, optional
+        :return: The predicted SMILES string and its NLL of being sampled
+        :rtype: list
         """
 
         # Scale inputs if model is trained on scaled data
@@ -1067,12 +1129,15 @@ class DDC:
         the single most probable character at each step.
         If temp==1, multinomial sampling without temperature scaling is used.
         Low temp leads to elimination of characters with low probabilities.
-        By default, self.sample_model predicts a single character for a single SMILES string.
-        To predict single characters for multiple SMILES strings, call build_sample_model()
-        with batch_input_length > 1. 
-        
-        predict_batch() generates batch_input_length (default==batch_size) individual SMILES 
+        predict_many() generates batch_input_length (default==batch_size) individual SMILES 
         strings per call. To change that, reset batch_input_length to a new value.
+        
+        :param latent: List of latent vectors
+        :type latent: list
+        :param temp: Temperatute of multinomial sampling (argmax if 0), defaults to 1
+        :type temp: int, optional
+        :return: List of predicted SMILES strings and their NLL of being sampled
+        :rtype: list
         """
 
         if latent.shape[0] == 1:
@@ -1158,10 +1223,14 @@ class DDC:
 
     @timed
     def get_smiles_nll(self, latent, smiles_ref) -> float:
-        """Calculate the NLL of a given SMILES string if its descriptors are used as RNN states.
-        "latent" refers to the descriptors of the "smiles_ref".
-        Returns:
-            The NLL of a given SMILES string.
+        """Back-calculate the NLL of a given SMILES string if its descriptors are used as RNN states.
+        
+        :param latent: Descriptors or latent representation of smiles_ref
+        :type latent: list
+        :param smiles_ref: Given SMILES to back-calculate its NLL
+        :type smiles_ref: str
+        :return: NLL of sampling smiles_ref given its latent representation (or descriptors)
+        :rtype: float
         """
 
         # Scale inputs if model is trained on scaled data
@@ -1206,10 +1275,15 @@ class DDC:
 
     @timed
     def get_smiles_nll_batch(self, latent, smiles_ref) -> list:
-        """Calculate the individual NLL for a batch of known SMILES strings.
+        """Back-calculate the individual NLL for a batch of known SMILES strings.
         Batch size is equal to self.batch_input_length so reset it if needed.
-        Returns:
-            NLL of all SMILES as a list.
+        
+        :param latent: List of latent representations (or descriptors)
+        :type latent: list
+        :param smiles_ref: List of given SMILES to back-calculate their NLL
+        :type smiles_ref: list
+        :return: List of NLL of sampling smiles_ref given their latent representations (or descriptors)
+        :rtype: list
         """
 
         assert (
@@ -1278,8 +1352,9 @@ class DDC:
                 return NLL
 
     def summary(self):
-        """Echo the training configuration for inspection."""
-
+        """Echo the training configuration for inspection.
+        """
+        
         print(
             "\nModel trained with dataset %s that has maxlen=%d and charset=%s for %d epochs."
             % (self.dataset_name, self.maxlen, self.charset, self.epochs)
@@ -1324,8 +1399,12 @@ class DDC:
 
     @timed
     def save(self, model_name):
-        """Save model in a zip file."""
-
+        """Save model in a zip file.
+   
+        :param model_name: Path to save model in
+        :type model_name: str
+        """
+        
         with tempfile.TemporaryDirectory() as dirpath:
 
             # Save the Keras models
