@@ -18,7 +18,7 @@ class TrainModelRunner:
     lambda_gp = 10
 
     def __init__(self, input_data_path, output_model_folder, decode_mols_save_path='', n_epochs=200, starting_epoch=1,
-                 batch_size=64, lr=0.0002, b1=0.5, b2=0.999, n_cpu=4, n_critic=5, clip_value=0.01, sample_interval=10,
+                 batch_size=64, lr=0.0002, b1=0.5, b2=0.999,  n_critic=5, sample_interval=10,
                  save_interval=100, sample_after_training=100, message=""):
         self.message = message
 
@@ -31,9 +31,7 @@ class TrainModelRunner:
         self.lr = lr
         self.b1 = b1
         self.b2 = b2
-        self.n_cpu = n_cpu
         self.n_critic = n_critic
-        self.clip_value = clip_value
         self.sample_interval = sample_interval
         self.save_interval = save_interval
         self.sample_after_training = sample_after_training
@@ -160,6 +158,7 @@ class TrainModelRunner:
         with open(os.path.join(self.output_model_folder, 'gen_loss.json'), 'w') as json_file:
             json.dump(g_loss_log, json_file)
 
+        # Sampling after training
         if self.sample_after_training > 0:
             # sampling mode
             torch.no_grad()
@@ -167,12 +166,10 @@ class TrainModelRunner:
 
             S = Sampler(generator=self.G)
             latent = S.sample(self.sample_after_training)
-            # latent = ((latent + 1) * self.peak / 2) + self.min
             latent = latent.detach().cpu().numpy().tolist()
 
             sampled_mols_save_path = os.path.join(self.output_model_folder, 'sampled.json')
             with open(sampled_mols_save_path, 'w') as json_file:
-                # array_fake_mols = fake_mols.data
                 json.dump(latent, json_file)
 
             # decoding sampled mols

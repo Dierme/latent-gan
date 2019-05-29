@@ -7,7 +7,7 @@ def create_model():
 
     parser.add_argument("--input-data-path", "-i", help="The path to a data file.", type=str, required=True)
     parser.add_argument("--output-model-folder", "-o", help="Prefix to the folder to save output model.", type=str)
-    parser.add_argument("--latent_dim", "-ld", help="dimensionality of the latent space", type=int)
+    parser.add_argument("--latent_dim", "-ld", help="dimensionality of the noise", type=int)
     args = {k: v for k, v in vars(parser.parse_args()).items() if v is not None}
 
     runner = CreateModelRunner(**args)
