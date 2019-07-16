@@ -39,9 +39,9 @@ from sklearn.preprocessing import StandardScaler  # For the descriptors
 from sklearn.decomposition import PCA  # For the descriptors
 
 # Custom dependencies
-from .vectorizers import SmilesVectorizer
-from .generators import CodeGenerator as DescriptorGenerator
-from .generators import HetSmilesGenerator
+from vectorizers import SmilesVectorizer
+from generators import CodeGenerator as DescriptorGenerator
+from generators import HetSmilesGenerator
 from custom_callbacks import ModelAndHistoryCheckpoint, LearningRateSchedule
 
 
