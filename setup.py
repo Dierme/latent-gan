@@ -9,7 +9,7 @@ setup(
     author_email="panagiotis-christos.kotsias@astrazeneca.net",
     license="GPLv3",
     packages=["ddc_pub"],
-    install_requires=[  # "rdkit",
+    install_requires=[
         "numpy",
         "h5py",
         "ipywidgets",
@@ -17,7 +17,6 @@ setup(
         "keras",
         "scikit-learn",
         "scipy",
-        # "cudatoolkit",
         "ipykernel",
         "ipython",
         "matplotlib",
