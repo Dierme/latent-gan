@@ -13,6 +13,8 @@ from datetime import datetime
 from functools import wraps
 import shutil, zipfile, tempfile, pickle
 
+from typing import overload
+
 import keras
 from keras.layers import (
     Input,
@@ -37,15 +39,14 @@ from sklearn.preprocessing import StandardScaler  # For the descriptors
 from sklearn.decomposition import PCA  # For the descriptors
 
 # Custom dependencies
-from molvecgen import SmilesVectorizer
+from .vectorizers import SmilesVectorizer
 from .generators import CodeGenerator as DescriptorGenerator
 from .generators import HetSmilesGenerator
-from .custom_callbacks import ModelAndHistoryCheckpoint, LearningRateSchedule
+from custom_callbacks import ModelAndHistoryCheckpoint, LearningRateSchedule
 
 
 def timed(func):
     """Timer decorator to benchmark functions."""
-
     @wraps(func)
     def wrapper(*args, **kwargs):
         tstart = datetime.now()
@@ -53,7 +54,6 @@ def timed(func):
         elapsed = (datetime.now() - tstart).microseconds / 1e6
         print("Elapsed time: %.3f seconds." % elapsed)
         return result
-
     return wrapper
 
 
@@ -241,8 +241,18 @@ class DDC:
 
             # Load the model
             self.__load(self.model_name)
-
+            
             if self.mode == "retrain":
+                # If scaling is required
+                if self.scaler is not None:
+                    print("Applying scaling on input.")
+                    x = self.scaler.transform(x)
+
+                # If PCA is required
+                if self.pca is not None:
+                    print("Applying PCA on input.")
+                    x = self.pca.transform(x)
+                
                 # Build data generators
                 self.__build_generators(x, y)
 
@@ -834,11 +844,11 @@ class DDC:
                 dirpath + "/latent_to_states_model.h5"
             )
             self.__batch_model = load_model(dirpath + "/batch_model.h5")
-
+            
             # Build sample_model out of the trained batch_model
             self.__build_sample_model(batch_input_length=1)  # Single-output model
             self.__build_sample_model(
-                batch_input_length=self.batch_size
+                batch_input_length=256 # could also be self.batch_size
             )  # Multi-output model
 
         print("Loading finished in %i seconds." % ((datetime.now() - tstart).seconds))
@@ -854,7 +864,6 @@ class DDC:
         mini_epochs,
         patience,
         model_name,
-		checkpoint_dir,
         gpus=1,
         workers=1,
         use_multiprocessing=False,
@@ -862,6 +871,7 @@ class DDC:
         max_queue_size=10,
         clipvalue=0,
         save_period=5,
+        checkpoint_dir="/projects/mai/kjmv588/models/checkpoints/",
         lr_decay=False,
         sch_epoch_to_start=500,
         sch_last_epoch=999,
@@ -1010,7 +1020,7 @@ class DDC:
                 use_multiprocessing=use_multiprocessing,
                 verbose=verbose,
             )  # 1 to show progress bar
-            
+
         # Build sample_model out of the trained batch_model
         self.__build_sample_model(batch_input_length=1)  # Single-output model
         self.__build_sample_model(
@@ -1033,25 +1043,18 @@ class DDC:
         else:
             return self.smilesvec2.transform(mols_test)
 
-    def transform(self, mols):
-        """Encode a batch of molecules into their latent representations.
+    def transform(self, mols_ohe):
+        """Encode a batch of OHE molecules into their latent representations.
         Must be called on the output of self.vectorize().
-        Updated to accept binary molecules and perform implicit vectorization.
         
-        :param mols: List of molecules
-        :type mols: list
+        :param mols_ohe: List of One-Hot Encoded molecules
+        :type mols_ohe: list
         :return: Latent representation of input molecules
         :rtype: list
         """
-        try:
-            # Mols need to be vectorized
-            latent = self.mol_to_latent_model.predict(self.vectorize(mols))
-            return latent.reshape((latent.shape[0], 1, latent.shape[1]))
-        except:
-            # Mols are pre-vectorized (old implementation)
-            latent = self.mol_to_latent_model.predict(mols)
-            return latent.reshape((latent.shape[0], 1, latent.shape[1]))
-            
+
+        latent = self.mol_to_latent_model.predict(mols_ohe)
+        return latent.reshape((latent.shape[0], 1, latent.shape[1]))
 
     # @timed
     def predict(self, latent, temp=1):
