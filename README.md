@@ -18,8 +18,8 @@
 - `transform()`: Encode a vectorized molecule to its latent representation.
 - `predict()`: Decode a latent representation into a SMILES string and calculate its NLL.
 - `predict_batch()`: Decode a list of latent representations into SMILES strings and calculate their NLLs.
-- `get_smiles_nll()`: Calculate the NLL of a known SMILES string to be sampled by the biased decoder.
-- `get_smiles_nll_batch()`: Calculate the NLLs of a batch of known SMILES strings to be sampled by the biased decoder.
+- `get_smiles_nll()`: Back-calculate the NLL of a known SMILES string to be sampled by the biased decoder.
+- `get_smiles_nll_batch()`: Back-calculate the NLLs of a batch of known SMILES strings to be sampled by the biased decoder.
 - `summary()`: Display essential architectural parameters.
-- `get_graphs()`: Export model graphs to .png files using `pydot` and `graphviz`.
+- `get_graphs()`: Export model graphs to .png files using `pydot` and `graphviz` (might fail).
 - `save()`: Save the model in a .zip directory.
