@@ -23,7 +23,7 @@ from keras.layers import (
     TimeDistributed,
     Bidirectional,
     GaussianNoise,
-    BatchNormalization
+    BatchNormalization,
 )
 from keras.layers import (
     CuDNNLSTM as LSTM,
@@ -196,7 +196,7 @@ class DDC:
                     )
             else:
                 self.__codelayer_dim = kwargs.get("codelayer_dim", 128)
-
+            
             # Create the left/right-padding vectorizers
             self.__smilesvec1 = SmilesVectorizer(
                 canonical=False,
@@ -453,7 +453,7 @@ class DDC:
         :param split: Fraction of samples to keep for training (rest for validation), defaults to 0.9
         :type split: float, optional
         """
-        
+
         # Sanity check
         assert len(x) == len(y)
 
@@ -868,7 +868,8 @@ class DDC:
         sch_lr_init=1e-3,
         sch_lr_final=1e-6,
     ):
-      	"""Fit the full model to the training data.
+
+        """Fit the full model to the training data.
         Supports multi-gpu training if gpus set to >1.
         
         :param epochs: Training iterations over complete training set.
@@ -1009,7 +1010,7 @@ class DDC:
                 use_multiprocessing=use_multiprocessing,
                 verbose=verbose,
             )  # 1 to show progress bar
-
+            
         # Build sample_model out of the trained batch_model
         self.__build_sample_model(batch_input_length=1)  # Single-output model
         self.__build_sample_model(
@@ -1032,18 +1033,25 @@ class DDC:
         else:
             return self.smilesvec2.transform(mols_test)
 
-    def transform(self, mols_ohe):
-        """Encode a batch of OHE molecules into their latent representations.
+    def transform(self, mols):
+        """Encode a batch of molecules into their latent representations.
         Must be called on the output of self.vectorize().
+        Updated to accept binary molecules and perform implicit vectorization.
         
-        :param mols_ohe: List of One-Hot Encoded molecules
-        :type mols_ohe: list
+        :param mols: List of molecules
+        :type mols: list
         :return: Latent representation of input molecules
         :rtype: list
         """
-
-        latent = self.mol_to_latent_model.predict(mols_ohe)
-        return latent.reshape((latent.shape[0], 1, latent.shape[1]))
+        try:
+            # Mols need to be vectorized
+            latent = self.mol_to_latent_model.predict(self.vectorize(mols))
+            return latent.reshape((latent.shape[0], 1, latent.shape[1]))
+        except:
+            # Mols are pre-vectorized (old implementation)
+            latent = self.mol_to_latent_model.predict(mols)
+            return latent.reshape((latent.shape[0], 1, latent.shape[1]))
+            
 
     # @timed
     def predict(self, latent, temp=1):
@@ -1354,7 +1362,7 @@ class DDC:
     def summary(self):
         """Echo the training configuration for inspection.
         """
-        
+
         print(
             "\nModel trained with dataset %s that has maxlen=%d and charset=%s for %d epochs."
             % (self.dataset_name, self.maxlen, self.charset, self.epochs)
@@ -1404,7 +1412,7 @@ class DDC:
         :param model_name: Path to save model in
         :type model_name: str
         """
-        
+
         with tempfile.TemporaryDirectory() as dirpath:
 
             # Save the Keras models
@@ -1416,17 +1424,17 @@ class DDC:
 
             # Exclude unpicklable and unwanted attributes
             excl_attr = [
-                "_DDC__mode",  
-                "_DDC__train_gen",  
-                "_DDC__valid_gen",  
-                "_DDC__mol_to_latent_model",  
-                "_DDC__latent_to_states_model",  
-                "_DDC__batch_model",  
-                "_DDC__sample_model",  
-                "_DDC__multi_sample_model",  
+                "_DDC__mode",
+                "_DDC__train_gen",
+                "_DDC__valid_gen",
+                "_DDC__mol_to_latent_model",
+                "_DDC__latent_to_states_model",
+                "_DDC__batch_model",
+                "_DDC__sample_model",
+                "_DDC__multi_sample_model",
                 "_DDC__model",
-            ] 
-            
+            ]
+
             # Cannot deepcopy self.__dict__ because of Keras' thread lock so this is
             # bypassed by popping and re-inserting the unpicklable attributes
             to_add = {}
@@ -1445,4 +1453,3 @@ class DDC:
                 self.__dict__[attr] = to_add[attr]
 
             print("Model saved.")
-            
