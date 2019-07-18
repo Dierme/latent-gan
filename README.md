@@ -6,7 +6,7 @@ Currently only GPU version of the model is supported. You need access to a GPU t
 
 ### Installation
 - Clone the repo to your current working directory `git clone https://kjmv588@bitbucket.astrazeneca.net/scm/~kjmv588/ddc_pub.git`
-- Create a predefined Python3.6 conda environment by `conda env create -f ddc_env.yml`
+- Create a predefined Python3.6 conda environment by `conda env create -f env/ddc_env.yml`
 - Run `python setup.py install` to install pip dependencies and add the package to the Python path
 - Add the environment in the drop-down list of jupyter by `python -m ipykernel install --user --name ddc_env --display-name "ddc_env (python_3.6.7)"`
 
