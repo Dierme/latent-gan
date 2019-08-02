@@ -1,5 +1,5 @@
-#Experimental Class for Smiles Enumeration, Iterator and SmilesIterator adapted from Keras 1.2.2
-# Author: Esben Bjerrum, https://github.com/EBjerrum/molvecgen
+# Experimental Class for Smiles Enumeration, Iterator and SmilesIterator adapted from Keras 1.2.2
+# Source: https://github.com/EBjerrum/molvecgen
 
 from rdkit import Chem
 import numpy as np
@@ -22,7 +22,6 @@ class SmilesVectorizer(object):
         self.startchar = startchar
         self.endchar = endchar
         self.unknownchar = unknownchar
-        
         
         #Vectorization and SMILES options
         self.binary = binary
