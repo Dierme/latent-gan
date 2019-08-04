@@ -1,4 +1,3 @@
-import pickle
 from models.Discriminator import Discriminator
 from models.Generator import Generator
 import os
@@ -7,10 +6,10 @@ import json
 
 
 class CreateModelRunner:
-    def __init__(self, input_data_path, output_model_folder, latent_dim=512):
+    def __init__(self, input_data_path, output_model_folder):
         self.input_data_path = input_data_path
         self.output_model_folder = output_model_folder
-        self.latent_dim = latent_dim
+
 
     def run(self):
         # get data
@@ -23,11 +22,13 @@ class CreateModelRunner:
         D = Discriminator(data_shape)
 
         # save Discriminator
+        if not os.path.exists(self.output_model_folder):
+            os.makedirs(self.output_model_folder)
         discriminator_path = os.path.join(self.output_model_folder, 'discriminator.txt')
         D.save(discriminator_path)
 
         # create Generator
-        G = Generator(data_shape, latent_dim=self.latent_dim)
+        G = Generator(data_shape, latent_dim= shape[2])
 
         # save generator
         generator_path = os.path.join(self.output_model_folder, 'generator.txt')

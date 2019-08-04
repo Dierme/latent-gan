@@ -1,4 +1,4 @@
-from ddc_pub import ddc_v3 as ddc
+from ddc_pub.ddc_pub import ddc_v3 as ddc
 import os
 
 DEFAULT_MODEL_VERSION = '9784435'

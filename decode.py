@@ -40,7 +40,7 @@ def decode(latent_mols_file, output_smiles_file_path=None, message=''):
                 else:
                     invalids += 1
 
-    print("Total: [%d] Valid: [%d]" % (n, (n - invalids) / n * 100))
+    print("Total: [%d] Fraction Valid: [0.%d]" % (n, (n - invalids) / n * 100))
 
 
 if __name__ == "__main__":

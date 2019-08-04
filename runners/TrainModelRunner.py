@@ -18,7 +18,7 @@ class TrainModelRunner:
     lambda_gp = 10
 
     def __init__(self, input_data_path, output_model_folder, decode_mols_save_path='', n_epochs=200, starting_epoch=1,
-                 batch_size=64, lr=0.0002, b1=0.5, b2=0.999,  n_critic=5, sample_interval=10,
+                 batch_size=64, lr=0.0002, b1=0.5, b2=0.999,  n_critic=5,
                  save_interval=100, sample_after_training=100, message=""):
         self.message = message
 
@@ -32,7 +32,6 @@ class TrainModelRunner:
         self.b1 = b1
         self.b2 = b2
         self.n_critic = n_critic
-        self.sample_interval = sample_interval
         self.save_interval = save_interval
         self.sample_after_training = sample_after_training
         self.decode_mols_save_path = decode_mols_save_path
@@ -43,7 +42,7 @@ class TrainModelRunner:
         latent_space_mols = latent_space_mols.reshape(latent_space_mols.shape[0], 512)
 
         self.dataloader = torch.utils.data.DataLoader(LatentMolsDataset(latent_space_mols), shuffle=True,
-                                                      batch_size=self.batch_size)
+                                                      batch_size=self.batch_size, drop_last=True)
 
         # load discriminator
         discriminator_name = 'discriminator.txt' if self.starting_epoch == 1 else str(

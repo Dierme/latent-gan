@@ -1,11 +1,11 @@
-import os, json, argparse, sys
+import json, argparse, sys
 from decode import decode
 import torch
 from models.Generator import Generator
 from src.Sampler import Sampler
 
 
-def sample(generator_path, output_sampled_latent_file, sample_number=50000, message='samling the generator',
+def sample(generator_path, output_sampled_latent_file, number_samples=50000, message='samling the generator',
            decode_sampled=False, output_decoded_smiles_file=''):
     print(message)
     sys.stdout.flush()
@@ -23,7 +23,7 @@ def sample(generator_path, output_sampled_latent_file, sample_number=50000, mess
     S = Sampler(generator=G)
     print('Sampling model')
     sys.stdout.flush()
-    latent = S.sample(sample_number)
+    latent = S.sample(number_samples)
 
     latent = latent.detach().cpu().numpy().tolist()
 
@@ -48,10 +48,10 @@ if __name__ == "__main__":
     parser.add_argument("--generator-path", "-l", help="The path to a data file.", type=str, required=True)
     parser.add_argument("--output-sampled-latent_file", "-olf", help="The path to a sampled latents file.", type=str,
                         required=True)
-    parser.add_argument("--sample-number", "-n", help="The amount of smiles to sample", type=int)
+    parser.add_argument("--number-samples", "-n", help="The amount of smiles to sample", type=int)
     parser.add_argument("--message", "-m", help="Message printed before training.", type=str)
     parser.add_argument("--decode-sampled", "-d", help="If the decoding should be done", type=bool)
-    parser.add_argument("--output-decoded-smiles-file", "-odsf", help="The location of te sampled smiles.", type=str)
+    parser.add_argument("--output-decoded-smiles-file", "-odsf", help="The location of the sampled smiles.", type=str)
 
     args = {k: v for k, v in vars(parser.parse_args()).items() if v is not None}
 
