@@ -1,4 +1,4 @@
 *.zip
-*.cpython
+__pycache__
 *.idea/
 *.ipynb
