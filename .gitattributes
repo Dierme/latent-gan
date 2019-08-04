@@ -1,4 +1,2 @@
 *.zip filter=lfs diff=lfs merge=lfs -text
-.zip filter=lfs diff=lfs merge=lfs -text
-autoencoder/9784435.zip filter=lfs diff=lfs merge=lfs -text
-ddc_pub/models/heteroencoder/9784435.zip filter=lfs diff=lfs merge=lfs -text
+
