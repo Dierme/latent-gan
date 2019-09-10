@@ -19,25 +19,23 @@ def decode(latent_mols_file, output_smiles_file_path=None, message=''):
         latent = json.load(f)
 
     invalids = 0
-    batch_size = 128    # decoding batch size
+    batch_size = 256    # decoding batch size
     n = len(latent)
 
     with open(output_smiles_file_path, 'w') as smiles_file:
         for indx in range(0, n // batch_size):
-            lat = np.array(latent[(indx) * 128:(indx + 1) * 128])
+            lat = np.array(latent[(indx) * 256:(indx + 1) * 256])
             if indx % 10 == 0:
                 print("[%d/%d] [Invalids: %s]" % (indx, n // batch_size + 1, invalids))
                 sys.stdout.flush()
                 smiles_file.flush()
             # obs = np.squeeze(lat, 1)
             smiles, _ = model.predict_batch(lat, temp=0)
+            for smi in smiles:
 
-            for mol in smiles:
-                mol = Chem.MolFromSmiles(mol)
-                if mol:
-                    smile_string = Chem.MolToSmiles(mol)
-                    smiles_file.write(smile_string + '\n')
-                else:
+                smiles_file.write(smi + '\n')
+                mol = Chem.MolFromSmiles(smi)
+                if not mol:
                     invalids += 1
 
     print("Total: [%d] Fraction Valid: [0.%d]" % (n, (n - invalids) / n * 100))

@@ -1,5 +1,11 @@
+# Source: https://github.com/EBjerrum/molvecgen
 import numpy as np
 import threading
+
+# For CodeGenerator
+from rdkit.Chem.Fingerprints import FingerprintMols
+from rdkit.Chem import Descriptors, rdMolDescriptors
+
 
 class Iterator(object):
     """Abstract base class for data iterators.
@@ -11,6 +17,7 @@ class Iterator(object):
     """
 
     def __init__(self, n, batch_size, shuffle, seed):
+        
         self.n = n
         self.batch_size = batch_size
         self.shuffle = shuffle
@@ -53,7 +60,7 @@ class Iterator(object):
 
     def __next__(self, *args, **kwargs):
         return self.next(*args, **kwargs)
-
+       
 class SmilesGenerator(Iterator):
     """Iterator yielding data from a SMILES array.
 
@@ -108,10 +115,7 @@ class SmilesGenerator(Iterator):
             return batch_x
         batch_y = self.y[index_array]
         return batch_x, batch_y
-    
-    
-    
-    
+        
 class HetSmilesGenerator(SmilesGenerator):
     """Hetero (maybe) generator class, for use to train the autoencoder.
     
@@ -129,6 +133,11 @@ class HetSmilesGenerator(SmilesGenerator):
         self.smilesvectorizer = smilesvectorizer
         self.smilesvectorizer_2 = smilesvectorizer_2
         
+        self.enc_dims = list(self.smilesvectorizer.dims)
+        #Subtract one from the output dims to prepare for the left shifting of output
+        self.dec_dims = list(self.smilesvectorizer.dims)
+        self.dec_dims[0] = self.dec_dims[0]-1
+        
     def next(self):
         """For python 2.x.
 
@@ -138,11 +147,6 @@ class HetSmilesGenerator(SmilesGenerator):
         # the indexing of each batch.
         with self.lock:
             index_array, current_index, current_batch_size = next(self.index_generator)
-            
-        self.enc_dims = list(self.smilesvectorizer.dims)
-        #Subtract one from the output dims to prepare for the left shifting of output
-        self.dec_dims = list(self.smilesvectorizer.dims)
-        self.dec_dims[0] = self.dec_dims[0]-1
 
         #Prepare output arrays
         batch_1D = np.zeros(tuple([current_batch_size] + self.enc_dims), dtype=self.dtype)
@@ -162,3 +166,105 @@ class HetSmilesGenerator(SmilesGenerator):
 
         return [batch_1D, batch_1D_i], batch_1D_o
     
+    
+class SmilesGenerator2(SmilesGenerator):
+    """Generator class, for use to train the unbiased SMILES RNN.
+    
+    smilesvectorizer creates the input for the encoder (not used BUT kept for compatibility)
+        Can be left_padded. 
+    smilesvectorizer_2 creates the teacher input for the decoder + output.
+        Must be right_padded. Output for decoder left shifted 1 pos, so no startchar.
+    """
+    def __init__(self, x, y, smilesvectorizer, smilesvectorizer_2,
+                 batch_size=32, shuffle=False, seed=None,
+                 dtype=np.float32):
+        super(SmilesGenerator2,self).__init__(x, y, smilesvectorizer,
+                                              batch_size=batch_size, shuffle=shuffle, seed=seed,
+                                              dtype=dtype)
+        self.smilesvectorizer = smilesvectorizer
+        self.smilesvectorizer_2 = smilesvectorizer_2
+        
+        self.enc_dims = list(self.smilesvectorizer.dims)
+        #Subtract one from the output dims to prepare for the left shifting of output
+        self.dec_dims = list(self.smilesvectorizer.dims)
+        self.dec_dims[0] = self.dec_dims[0]-1
+        
+    def next(self):
+        """For python 2.x.
+
+        :returns: The next batch.
+        """
+        # Keeps under lock only the mechanism which advances
+        # the indexing of each batch.
+        with self.lock:
+            index_array, current_index, current_batch_size = next(self.index_generator)
+
+        #Prepare output arrays
+        batch_1D = np.zeros(tuple([current_batch_size] + self.enc_dims), dtype=self.dtype)
+        batch_1D_i = np.zeros(tuple([current_batch_size] + self.dec_dims), dtype=self.dtype)
+        batch_1D_o = np.zeros(tuple([current_batch_size] + self.dec_dims), dtype=self.dtype)
+
+        #TODO Maybe vectorize this, transform already has a for loop
+        for i, j in enumerate(index_array):
+            mol = self.x[j:j+1]
+            
+            chem1d_enc = self.smilesvectorizer.transform(mol)
+            chem1d_dec = self.smilesvectorizer_2.transform(mol)
+            
+            batch_1D[i] = chem1d_enc
+            batch_1D_i[i] = chem1d_dec[:,0:-1,:] #Including start_char
+            batch_1D_o[i] = chem1d_dec[:,1:,:]  #No start_char
+
+        return [batch_1D_i], batch_1D_o
+
+    
+class CodeGenerator(SmilesGenerator):
+    """Code generator class to train a DDC.
+    :parameter x: Numpy array of encoded input data.
+    :parameter y: Numpy array of SMILES output data.
+    :parameter vectorizer: Instance of molecular vectorizer
+    :parameter batch_size: Integer, size of a batch.
+    :parameter shuffle: Boolean, whether to shuffle the data between epochs.
+    :parameter seed: Random seed for data shuffling.
+    :parameter dtype: dtype to use for returned batch. Set to keras.backend.floatx if using Keras
+    """
+    def __init__(self, x, y, smilesvectorizer, smilesvectorizer_2,
+                 batch_size=32, shuffle=False, seed=None,
+                 dtype=np.float32):
+        super(CodeGenerator,self).__init__(x, y, smilesvectorizer,
+                 batch_size=batch_size, shuffle=shuffle, seed=seed,
+                 dtype=dtype)
+        self.smilesvectorizer = smilesvectorizer
+        self.smilesvectorizer_2 = smilesvectorizer_2
+        
+        self.input_dims = [self.x.shape[1]]
+        # Subtract one from the output dims to prepare for the left shifting of output
+        self.dec_dims = list(self.smilesvectorizer.dims)
+        self.dec_dims[0] = self.dec_dims[0]-1
+    
+    def next(self):
+        """For python 2.x.
+
+        :returns: The next batch.
+        """
+        # Keeps under lock only the mechanism which advances
+        # the indexing of each batch.
+        with self.lock:
+            index_array, current_index, current_batch_size = next(self.index_generator)
+
+        #Prepare output arrays
+        batch_1D = np.zeros(tuple([current_batch_size] + self.input_dims), dtype=self.dtype)
+        batch_1D_i = np.zeros(tuple([current_batch_size] + self.dec_dims), dtype=self.dtype)
+        batch_1D_o = np.zeros(tuple([current_batch_size] + self.dec_dims), dtype=self.dtype)
+
+        #TODO Maybe vectorize this, transform already has a for loop
+        for i, j in enumerate(index_array):
+            
+            mol  = self.y[j:j+1]
+            chem1d_dec = self.smilesvectorizer_2.transform(mol)
+            
+            batch_1D[i] = self.x[j:j+1]
+            batch_1D_i[i] = chem1d_dec[:,0:-1,:] #Including start_char
+            batch_1D_o[i] = chem1d_dec[:,1:,:]  #No start_char
+
+        return [batch_1D, batch_1D_i], batch_1D_o
