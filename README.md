@@ -6,7 +6,7 @@ LatentGAN [1] with heteroencoder trained on ChEMBL 25 [2], which encodes SMILES 
 
 Dependencies
 ------------
-This model uses the heterooencoder available as a package from [4], which is to be available soon.
+This model uses the heteroencoder available as a package from [4], which is to be available soon.
 
 
 General Usage Instructions
