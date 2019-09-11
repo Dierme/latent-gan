@@ -3,10 +3,40 @@ LatentGAN
 
 LatentGAN [1] with heteroencoder trained on ChEMBL 25 [2], which encodes SMILES strings into latent vector representations of size 512. A Wasserstein Generative Adversarial network with Gradient Penalty [3] is then trained to generate latent vectors resembling that of the training set, which are then decoded using the heteroencoder. The code has been confirmed to work with the environment provided in the `environment.yml` provided, but not all packages might be necessary. Refactoring the code to follow the other baselines is a Work in Progess. 
 
+
+Dependencies
+------------
+This model uses the heterooencoder available as a package from [4], which is to be available soon.
+
+
 General Usage Instructions
 --------------------------
 
-1) Encode SMILES (`Encode.py`): Gives a .latent file of latent vectors from a given SMILES file. Currently only accepts SMILES of token size smaller than 128.  
+One can use the runfile (`run.py`) for a single script that does the entire process from encoding smiles to create a training set, create and train a model, followed by sampling and decoding latent vectors back into SMILES using default hyperparameters.
+
+~~~~
+Arguments:
+-sf Input SMILES file name.
+-st Output storage directory path [DEFAULT:"storage/example/"].
+-lf Output latent file name [DEFAULT:"encoded_smiles.latent"], this will be put in the storage directory.
+-ds Output decoded SMILES file name [DEFAULT:"decoded_smiles.csv"], this will be put in the storage directory.
+--n-epochs Number of epochs to train the model for [DEFAULT: 2000].
+--sample-n Give how many latent vectors for the model to sample after the last epoch has finished training. Default: 30000.
+--encoder The data set the pre-trained heteroencoder has been trained on [chembl|moses] [DEFAULT:moses] IMPORTANT: Currently only moses model compatible with recent version of the heteroencoder.
+~~~~
+
+OR one can conduct the individual steps by using each script in succesion. This is useful to e.g. sample a saved model checkpoint using (`sample.py`).
+
+
+1) Encode SMILES (`encode.py`): Gives a .latent file of latent vectors from a given SMILES file. Currently only accepts SMILES of token size smaller than 128. 
+
+
+~~~~
+Arguments:
+-sf Input SMILES file name.
+-o Output Smiles file name.
+~~~~
+ 
 
 2) Create Model (`create_model.py`): Creates blank model files generator.txt and discriminator.txt  based on an input .latent file. 
 
@@ -60,4 +90,4 @@ Arguments
 
 [3] [Improved training of Wasserstein GANs](https://arxiv.org/abs/1704.00028)
 
-
+[4] [Deep-Drug-Coder](https://github.com/pcko1/Deep-Drug-Coder)

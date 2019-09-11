@@ -7,3 +7,6 @@ slurm*
 *.latent
 *.sh
 storage/
+data/
+autoencoder/new*
+autoencoder/chembl*

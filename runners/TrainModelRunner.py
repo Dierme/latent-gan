@@ -13,13 +13,13 @@ import time
 import sys
 
 
-class da    TrainModelRunner:
+class TrainModelRunner:
     # Loss weight for gradient penalty
     lambda_gp = 10
 
-    def __init__(self, input_data_path, output_model_folder, decode_mols_save_path='', n_epochs=200, starting_epoch=1,
+    def __init__(self, input_data_path, output_model_folder, decode_mols_save_path='', n_epochs=2000, starting_epoch=1,
                  batch_size=64, lr=0.0002, b1=0.5, b2=0.999,  n_critic=5,
-                 save_interval=100, sample_after_training=100, message=""):
+                 save_interval=1000, sample_after_training=30000, message=""):
         self.message = message
 
         # init params
@@ -159,6 +159,7 @@ class da    TrainModelRunner:
 
         # Sampling after training
         if self.sample_after_training > 0:
+            print("Training finished. Generating sample of latent vectors")
             # sampling mode
             torch.no_grad()
             self.G.eval()
@@ -172,6 +173,7 @@ class da    TrainModelRunner:
                 json.dump(latent, json_file)
 
             # decoding sampled mols
+            print("Sampling done. Decoding latent vectors into SMILES")
             decode(sampled_mols_save_path, self.decode_mols_save_path)
 
         return 0

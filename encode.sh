@@ -12,6 +12,6 @@ conda activate reinvent-lite
 trap "conda deactivate" EXIT
 
 python /projects/mai/kpsg824/wlgan/encode.py \
--sf data/moses.smi \
--o data/moses.latent \
+-sf data/EGFR_actives.smi \
+-o data/EGFR.latent \
 $@
