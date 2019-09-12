@@ -6,7 +6,7 @@ LatentGAN [1] with heteroencoder trained on ChEMBL 25 [2], which encodes SMILES 
 
 Dependencies
 ------------
-This model uses the heteroencoder available as a package from [4], which is to be available soon.
+This model uses the heteroencoder available as a package from [4], which is to be available soon. The heteroencoder further requires [This package](https://github.com/EBjerrum/molvecgen) to run properly on the ChEMBL model. 
 
 
 General Usage Instructions
@@ -22,7 +22,7 @@ Arguments:
 -ds Output decoded SMILES file name [DEFAULT:"decoded_smiles.csv"], this will be put in the storage directory.
 --n-epochs Number of epochs to train the model for [DEFAULT: 2000].
 --sample-n Give how many latent vectors for the model to sample after the last epoch has finished training. Default: 30000.
---encoder The data set the pre-trained heteroencoder has been trained on [chembl|moses] [DEFAULT:moses] IMPORTANT: Currently only moses model compatible with recent version of the heteroencoder.
+--encoder The data set the pre-trained heteroencoder has been trained on [chembl|moses] [DEFAULT:chembl] IMPORTANT: Currently only moses model compatible with recent version of the heteroencoder.
 ~~~~
 
 OR one can conduct the individual steps by using each script in succesion. This is useful to e.g. sample a saved model checkpoint using (`sample.py`).

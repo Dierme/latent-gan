@@ -1,7 +1,7 @@
 from ddc_pub import ddc_v3 as ddc
 import os
 
-DEFAULT_MODEL_VERSION = '16888509--1000--0.0927--0.0000010'
+DEFAULT_MODEL_VERSION = 'new_chembl_model'
 
 
 def load_model(model_version=None):
