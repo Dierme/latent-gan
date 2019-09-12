@@ -60,6 +60,7 @@ dependencies:
   - libxcb=1.13=h1bed415_1
   - libxml2=2.9.9=he19cac6_0
   - markdown=3.0.1=py36_0
+  - matplotlib=3.0.2=py36h5429711_0
   - mkl=2019.1=144
   - mkl_fft=1.0.10=py36ha843d7b_0
   - mkl_random=1.0.2=py36hd81dba3_0
@@ -140,6 +141,7 @@ dependencies:
     - markupsafe==1.1.1
     - mistune==0.8.4
     - molsets==0.1.2
+    - molvecgen==0.1
     - moviepy==1.0.0
     - nbconvert==5.6.0
     - nbformat==4.4.0

@@ -7,7 +7,7 @@ from runners.TrainModelRunner import TrainModelRunner
 
 class RunRunner:
 
-    def __init__(self, smiles_file="data/EGFR_training_cleaned.smi", storage_path="storage/example/",
+    def __init__(self, smiles_file="data/EGFR_training.smi", storage_path="storage/example/",
                  latent_file="encoded_smiles.latent", decoded_smiles="decoded_smiles.csv", n_epochs=2000,sample_n=30000, encoder=None):
 
 

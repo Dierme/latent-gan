@@ -3,11 +3,10 @@ __pycache__
 *.ipynb
 slurm*
 *.csv
-*.smi
 *.latent
 *.sh
 storage/
-data/
+moses*
 autoencoder/9*
 autoencoder/chembl*
 
