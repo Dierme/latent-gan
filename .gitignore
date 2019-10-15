@@ -6,7 +6,6 @@ slurm*
 *.latent
 *.sh
 storage/
-moses*
 autoencoder/9*
-autoencoder/chembl*
+
 

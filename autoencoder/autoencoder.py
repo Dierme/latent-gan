@@ -1,15 +1,15 @@
 from ddc_pub import ddc_v3 as ddc
 import os
 
-DEFAULT_MODEL_VERSION = 'new_chembl_model'
+DEFAULT_MODEL_VERSION = 'chembl'
 
 
 def load_model(model_version=None):
     # Import model
     if model_version == 'chembl':
-        model_name = 'new_chembl_model'
+        model_name = 'chembl_pretrained'
     elif model_version == 'moses':
-        model_name = '16888509--1000--0.0927--0.0000010'
+        model_name = 'moses_pretrained'
     else:
         model_name = DEFAULT_MODEL_VERSION
 
@@ -18,3 +18,5 @@ def load_model(model_version=None):
     model = ddc.DDC(model_name=path)
 
     return model
+
+model = load_model()
